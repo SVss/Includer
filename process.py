@@ -5,22 +5,28 @@ import os
 INCLUDE_DIRECTIVE = "#include"
 CURRENT_PATH = os.path.dirname(__file__)
 
-def process_file(filename):
-    filepath = os.path.join(CURRENT_PATH, filename)
-    print(filepath)
+def process_file(filename, base_path=CURRENT_PATH):
+    filepath = os.path.join(base_path, filename)
     file = open(filepath, 'r')
     result = ''
+    line = ''
     for line in file:
         if line.strip().startswith(INCLUDE_DIRECTIVE):
-            include_file_path = get_include_relpath(line)
-            line = process_file(include_file_path)
+            include_file_path = get_relpath(line)
+            include_file_dir, include_file_name = os.path.split(include_file_path)
+            next_base_path = os.path.join(base_path, include_file_dir)
+            line = process_file(include_file_name, next_base_path)
         result = result + line
     file.close()
+    if line != '\n':
+        result = result + '\n'
     return result
 
-def get_include_relpath(line):
+def get_relpath(line):
     x = line.find('"')
-    result = line[x:].replace('"', '').replace('\n', '').replace('/', os.sep)
+    if (x > 0):
+        line = line[x:]
+    result = line.rstrip('\n').strip('"').replace('/', os.sep)
     return result
 
 def write_result(output_filename, result):
@@ -40,7 +46,8 @@ if __name__ == "__main__":
         print("Can't process input file")
     else:
         try:
-            output_path = os.path.join(CURRENT_PATH, output_name)
+            rel_path = get_relpath(output_name)
+            output_path = os.path.normpath(os.path.join(CURRENT_PATH, rel_path))
             write_result(output_path, result)
         except:
             print("Can't write output file")
