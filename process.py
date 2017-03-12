@@ -45,10 +45,11 @@ def process_file(filepath):
     return result
 
 def get_path(line):
-    x = line.find('"')
-    if (x > 0):
-        line = line[x:]
-    result = line.rstrip('\n').strip('"').replace('/', os.sep)
+    start = line.find('"')
+    if not start < 0:
+        end = line.find('"', start+1)
+        line = line[start+1:end]
+    result = line.replace('/', os.sep)
     return result
 
 def write_result(output_filename, output):
