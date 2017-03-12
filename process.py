@@ -5,7 +5,7 @@ import os
 INCLUDE_DIRECTIVE = "#include"
 CURRENT_PATH = os.getcwd()
 
-PROCESSED_LIST = []
+PROCESSED_STACK = []
 
 def print_help():
     _, script_name = os.path.split(argv[0])
@@ -21,7 +21,7 @@ Run python {} -? to see this help.'.format(script_name, script_name)
 
 def process_file(filepath):
     try:
-        PROCESSED_LIST.append(filepath)
+        PROCESSED_STACK.append(filepath)
         file = open(filepath, 'r')
         result = []
         for line in file:
@@ -31,8 +31,9 @@ def process_file(filepath):
                     current_dir, _ = os.path.split(filepath)
                     include_file_path = os.path.join(current_dir, include_file_path)
                     include_file_path = os.path.normpath(include_file_path)
-                if not include_file_path in PROCESSED_LIST:
+                if not include_file_path in PROCESSED_STACK:
                     line = process_file(include_file_path)
+                    PROCESSED_STACK.remove(include_file_path)
                 for line in line:
                     result.append(line)
             else:
