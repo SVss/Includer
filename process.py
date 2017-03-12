@@ -3,21 +3,26 @@ import os
 
 
 INCLUDE_DIRECTIVE = "#include"
-CURRENT_PATH = os.path.dirname(__file__)
+CURRENT_PATH = os.getcwd()
 
-def process_file(filename, base_path=CURRENT_PATH):
+PROCESSED_LIST = []
+
+def process_file(filepath):
     try:
-        filepath = os.path.join(base_path, filename)
+        PROCESSED_LIST.append(filepath)
         file = open(filepath, 'r')
         result = []
         for line in file:
             if line.strip().startswith(INCLUDE_DIRECTIVE):
-                include_file_path = get_relpath(line)
-                include_file_dir, include_file_name = os.path.split(include_file_path)
-                next_base_path = os.path.join(base_path, include_file_dir)
-                line = process_file(include_file_name, next_base_path)
-                for x in line:
-                    result.append(x)
+                include_file_path = get_path(line)
+                if not os.path.isfile(include_file_path):
+                    current_dir, _ = os.path.split(filepath)
+                    include_file_path = os.path.join(current_dir, include_file_path)
+                    include_file_path = os.path.normpath(include_file_path)
+                if not include_file_path in PROCESSED_LIST:
+                    line = process_file(include_file_path)
+                for line in line:
+                    result.append(line)
             else:
                 result.append(line)
         file.close()
@@ -27,7 +32,7 @@ def process_file(filename, base_path=CURRENT_PATH):
         result.append('\n')
     return result
 
-def get_relpath(line):
+def get_path(line):
     x = line.find('"')
     if (x > 0):
         line = line[x:]
@@ -41,18 +46,21 @@ def write_result(output_filename, output):
 
 if __name__ == "__main__":
     assert len(argv) == 3
-    input_name = argv[1]
-    output_name = argv[2]
+    input_path = argv[1]
+    output_path = argv[2]
     try:
-        result = process_file(input_name)
+        if not os.path.isfile(input_path):
+            input_path = os.path.join(CURRENT_PATH, input_path)
+        result = process_file(input_path)
     except FileNotFoundError:
         print("Can't open input file")
     except:
         print("Can't process input file")
     else:
         try:
-            rel_path = get_relpath(output_name)
-            output_path = os.path.normpath(os.path.join(CURRENT_PATH, rel_path))
+            output_path = get_path(output_path)
+            if not os.path.isfile(output_path):
+                output_path = os.path.normpath(os.path.join(CURRENT_PATH, output_path))
             write_result(output_path, result)
         except:
             print("Can't write output file")
