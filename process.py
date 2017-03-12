@@ -11,15 +11,16 @@ def process_file(filename):
     file = open(filepath, 'r')
     result = ''
     for line in file:
-        if line.startswith(INCLUDE_DIRECTIVE):
-            x = line.find('"')
-            include_file_path = line[x:].replace('"', '')
-            include_file_path = include_file_path.replace('\n', '')
-            include_file_path = include_file_path.replace('/', os.sep)
-            result = result + process_file(include_file_path)
-        else:
-            result = result + line
+        if line.strip().startswith(INCLUDE_DIRECTIVE):
+            include_file_path = get_include_relpath(line)
+            line = process_file(include_file_path)
+        result = result + line
     file.close()
+    return result
+
+def get_include_relpath(line):
+    x = line.find('"')
+    result = line[x:].replace('"', '').replace('\n', '').replace('/', os.sep)
     return result
 
 def write_result(output_filename, result):
