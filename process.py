@@ -76,11 +76,11 @@ def process_file(filepath):
             elif status == ST_REPLACE:
                 if include_info['replace_dict']:
                     for key, value in include_info['replace_dict'].items():
-                        for line in include_info['lines']:
-                            result.append(line.replace(key, value))
-                else:
-                    for line in include_info['lines']:
-                        result.append(line)
+                        for j in range(len(include_info['lines'])):
+                            line = include_info['lines'][j]
+                            include_info['lines'][j] = line.replace(key, value)
+                for line in include_info['lines']:
+                    result.append(line)
                 include_info.clear()
                 status = ST_NORMAL
                 i += 1
