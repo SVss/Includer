@@ -4,8 +4,6 @@ import re
 
 
 INCLUDE_DIRECTIVE = '#include'
-QUOTED_FLAG = '-q'
-REPLACE_DICT_FLAG = '-r'
 CURRENT_PATH = os.getcwd()
 
 PROCESSED_STACK = []
@@ -16,7 +14,7 @@ ST_REPLACE = 2
 
 def print_help():
     _, script_name = os.path.split(argv[0])
-    help_str = 'Simple script to process #include directive.\n\n\
+    help_str = 'Extended #include directive file processor.\n\n\
 Works both with relative and absolute paths:\n\
 \t#include "test.txt"\n\
 \t#include "../previous.ext"\n\
@@ -48,7 +46,7 @@ def process_file(filepath):
                     if not include_path in PROCESSED_STACK:
                         include_info['lines'] = process_file(include_path)
                         PROCESSED_STACK.remove(include_path)
-                    if include_info['has_replace_dict']:
+                    if include_info['replace_dict'] != None:
                         status = ST_ACCUMULATE_DICT
                         i += 1
                     else:
@@ -64,17 +62,13 @@ def process_file(filepath):
                     include_info['replace_dict'][key] = value
                     i += 1
             elif status == ST_REPLACE:
-                if include_info['is_quoted']:
-                    result.append('"')
-                if include_info['has_replace_dict']:
+                if include_info['replace_dict']:
                     for key, value in include_info['replace_dict'].items():
                         for line in include_info['lines']:
                             result.append(line.replace(key, value))
                 else:
                     for line in include_info['lines']:
                         result.append(line)
-                if include_info['is_quoted']:
-                    result.append('"')
                 include_info.clear()
                 status = ST_NORMAL
                 i += 1
@@ -89,34 +83,26 @@ def process_file(filepath):
 
 def parse_include(line):
     line = line.strip()
-    start = line.find('"')
-    if not start < 0:
-        end = line.find('"', start+1)
-        if not end < 0:
-            path = line[start+1:end]
+    try:
+        match = re.match(r'^'+INCLUDE_DIRECTIVE+r'\s*"(.*)"\s*({)?\s*$', line)
+        if match:
+            path, has_dict = match.group(1, 2)
+            result = {
+                'path': get_path(path),
+                'lines': [],
+                'replace_dict': None
+            }
+            if has_dict:
+                result['replace_dict'] = {}
         else:
-            raise ValueError('Incorrect include path parameter: quotes are not closed')
-    else:
-        raise ValueError('Include path parameter not found')
-    params_list = parse_params(line[end:])
-    has_replace_dict = REPLACE_DICT_FLAG in params_list
-    if has_replace_dict and not line.endswith('{'):
-        raise ValueError('Invalid replace dictionary')
-    result = {
-        'path': get_path(path),
-        'is_quoted': QUOTED_FLAG in params_list,
-        'has_replace_dict': has_replace_dict,
-        'lines': [],
-        'replace_dict': {}
-    }
+            raise Exception
+    except:
+        ValueError('Incorrect include directive: {}'.format(line))
     return result
 
 def get_path(line):
     result = line.replace('/', os.sep)
     return result
-
-def parse_params(params_str):
-    return re.findall(r"\-[\w']", params_str)
 
 def parse_dict_record(line):
     line = line.strip()
