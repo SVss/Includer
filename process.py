@@ -99,10 +99,13 @@ def parse_include(line):
     else:
         raise ValueError('Include path parameter not found')
     params_list = parse_params(line[end:])
+    has_replace_dict = REPLACE_DICT_FLAG in params_list
+    if has_replace_dict and not line.endswith('{'):
+        raise ValueError('Invalid replace dictionary')
     result = {
         'path': get_path(path),
         'is_quoted': QUOTED_FLAG in params_list,
-        'has_replace_dict': REPLACE_DICT_FLAG in params_list and line.endswith('{'),
+        'has_replace_dict': has_replace_dict,
         'lines': [],
         'replace_dict': {}
     }
