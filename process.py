@@ -26,7 +26,7 @@ def process_file(filepath):
         result = []
         for line in file:
             if line.strip().startswith(INCLUDE_DIRECTIVE):
-                include_file_path = get_path(line)
+                include_file_path = parse_include(line)['path']
                 if not os.path.isfile(include_file_path):
                     current_dir, _ = os.path.split(filepath)
                     include_file_path = os.path.join(current_dir, include_file_path)
@@ -45,11 +45,20 @@ def process_file(filepath):
         result.append('\n')
     return result
 
-def get_path(line):
+def parse_include(line):
     start = line.find('"')
     if not start < 0:
         end = line.find('"', start+1)
-        line = line[start+1:end]
+        if not end < 0:
+            path = line[start+1:end]
+        else:
+            raise ValueError('Incorrect path')
+    result = {
+        "path": get_path(path)
+    }
+    return result
+
+def get_path(line):
     result = line.replace('/', os.sep)
     return result
 
