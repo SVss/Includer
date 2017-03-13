@@ -41,6 +41,7 @@ def process_file(filepath):
         file.close()
     except:
         print("Error processing file: " + filepath)
+        raise
     if (len(result) > 0) and result[len(result)-1] != '\n':
         result.append('\n')
     return result
@@ -52,7 +53,9 @@ def parse_include(line):
         if not end < 0:
             path = line[start+1:end]
         else:
-            raise ValueError('Incorrect path')
+            raise ValueError('Incorrect include path parameter: quotes are not closed')
+    else:
+        raise ValueError('Include path parameter not found')
     result = {
         "path": get_path(path)
     }
