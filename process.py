@@ -33,7 +33,6 @@ def process_file(filepath):
         input_lines = file.readlines()
         file.close()
         status = ST_NORMAL
-        include_info = {}
         result = []
         i = 0
         while i < len(input_lines):
@@ -63,9 +62,13 @@ def process_file(filepath):
                     include_info['replace_dict'][key] = value
                 i += 1
             elif status == ST_REPLACE:
+                if include_info['is_quoted']:
+                    result.append('"')
                 for key, value in include_info['replace_dict'].items():
                     for line in include_info['lines']:
                         result.append(line.replace(key, value))
+                if include_info['is_quoted']:
+                    result.append('"')
                 include_info.clear()
                 status = ST_NORMAL
         if status != ST_NORMAL:
