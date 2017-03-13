@@ -1,6 +1,6 @@
 from sys import argv
 import os
-from re import findall
+import re
 
 
 INCLUDE_DIRECTIVE = '#include'
@@ -50,7 +50,9 @@ def process_file(filepath):
                         PROCESSED_STACK.remove(include_path)
                     if include_info['has_replace_dict']:
                         status = ST_ACCUMULATE_DICT
-                    i += 1
+                        i += 1
+                    else:
+                        status = ST_REPLACE
                 else:
                     result.append(line)
                     i += 1
@@ -60,21 +62,26 @@ def process_file(filepath):
                 else:
                     key, value = parse_dict_record(line)
                     include_info['replace_dict'][key] = value
-                i += 1
+                    i += 1
             elif status == ST_REPLACE:
                 if include_info['is_quoted']:
                     result.append('"')
-                for key, value in include_info['replace_dict'].items():
+                if include_info['has_replace_dict']:
+                    for key, value in include_info['replace_dict'].items():
+                        for line in include_info['lines']:
+                            result.append(line.replace(key, value))
+                else:
                     for line in include_info['lines']:
-                        result.append(line.replace(key, value))
+                        result.append(line)
                 if include_info['is_quoted']:
                     result.append('"')
                 include_info.clear()
                 status = ST_NORMAL
+                i += 1
         if status != ST_NORMAL:
             raise EOFError('Unexpected end of file')
-    except:
-        print("Error processing file: " + filepath)
+    except Exception as e:
+        print("Error processing file \"{}\"\n{}".format(filepath, e))
         raise
     if (len(result) > 0) and result[len(result)-1] != '\n':
         result.append('\n')
@@ -106,10 +113,19 @@ def get_path(line):
     return result
 
 def parse_params(params_str):
-    return findall(r"\-[\w']", params_str)
+    return re.findall(r"\-[\w']", params_str)
 
 def parse_dict_record(line):
-    return '${db_name}', 'XXXX'
+    line = line.strip()
+    match = re.match(r"^\s*'(.*)'\s*:\s*'(.*)',?$", line)
+    if match:
+        key, value = match.group(1, 2)
+        if key.count("'") != key.count("\\'"):
+            raise ValueError('Invalid key in dictionary record: {}'.format(line))
+        key = key.replace("\'", "'")
+    else:
+        raise ValueError('Invalid dictionary record: {}'.format(line))
+    return key, value
 
 def write_result(output_filename, output):
     file = open(output_filename, 'w')
