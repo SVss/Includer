@@ -7,6 +7,18 @@ CURRENT_PATH = os.getcwd()
 
 PROCESSED_LIST = []
 
+def print_help():
+    _, script_name = os.path.split(argv[0])
+    help_str = 'Simple script to process #include directive.\n\n\
+Works both with relative and absolute paths:\n\
+\t#include "test.txt"\n\
+\t#include "../previous.ext"\n\
+\t#include "X:/path/to/file.inc"\n\n\
+Usage format:\n\n\
+\tpython {}  <input_file_name>  <output_file_name>\n\n\
+Run python {} -? to see this help.'.format(script_name, script_name)
+    print(help_str)
+
 def process_file(filepath):
     try:
         PROCESSED_LIST.append(filepath)
@@ -44,8 +56,7 @@ def write_result(output_filename, output):
     file.writelines(output)
     file.close()
 
-if __name__ == "__main__":
-    assert len(argv) == 3
+def process():
     input_path = argv[1]
     output_path = argv[2]
     try:
@@ -64,3 +75,13 @@ if __name__ == "__main__":
             write_result(output_path, result)
         except:
             print("Can't write output file")
+
+
+if __name__ == "__main__":
+    if len(argv) == 1 or '-?' in argv:
+        print_help()
+    elif len(argv) != 3:
+        print("Bad arguments count. Expected 3, got {}\n".format(len(argv)))
+        print_help()
+    else:
+        process()
