@@ -32,9 +32,8 @@ def process_file(filepath):
         file = open(filepath, 'r')
         input_lines = file.readlines()
         file.close()
-        include_lines = []
         status = ST_NORMAL
-        replace_dict = {}
+        include_info = {}
         result = []
         i = 0
         while i < len(input_lines):
@@ -48,7 +47,7 @@ def process_file(filepath):
                         include_path = os.path.join(current_dir, include_path)
                         include_path = os.path.normpath(include_path)
                     if not include_path in PROCESSED_STACK:
-                        include_lines = process_file(include_path)
+                        include_info['lines'] = process_file(include_path)
                         PROCESSED_STACK.remove(include_path)
                     if include_info['has_replace_dict']:
                         status = ST_ACCUMULATE_DICT
@@ -61,13 +60,13 @@ def process_file(filepath):
                     status = ST_REPLACE
                 else:
                     key, value = parse_dict_record(line)
-                    replace_dict[key] = value
+                    include_info['replace_dict'][key] = value
                 i += 1
             elif status == ST_REPLACE:
-                for key, value in replace_dict.items():
-                    for line in include_lines:
+                for key, value in include_info['replace_dict'].items():
+                    for line in include_info['lines']:
                         result.append(line.replace(key, value))
-                replace_dict.clear()
+                include_info.clear()
                 status = ST_NORMAL
         if status != ST_NORMAL:
             raise EOFError('Unexpected end of file')
@@ -93,7 +92,9 @@ def parse_include(line):
     result = {
         'path': get_path(path),
         'is_quoted': QUOTED_FLAG in params_list,
-        'has_replace_dict': REPLACE_DICT_FLAG in params_list and line.endswith('{')
+        'has_replace_dict': REPLACE_DICT_FLAG in params_list and line.endswith('{'),
+        'lines': [],
+        'replace_dict': {}
     }
     return result
 
