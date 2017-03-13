@@ -19,9 +19,21 @@ Works both with relative and absolute paths:\n\
 \t#include "test.txt"\n\
 \t#include "../previous.ext"\n\
 \t#include "X:/path/to/file.inc"\n\n\
+Common include directive syntax:\n\n\
+\t#include "<file_path>" [{]\n\n\
+If "{" occures at the end of line, #include directive must be followed by\n\
+replace-dictionary declaration:\n\n\
+\t#include "<file_path>" {\n\
+\t\t\'<some_key>\': \'<some_value>\',\n\
+\t\t...\n\
+\t}\n\
+\t...\n\n\
+Replace operation is performed after all #include-s processed, so\n\
+each <some_key> appearance in <file_path> and it\'s included files content\n\
+will be replaced in output with <some_value> text.\n\n\
 Usage format:\n\n\
-\tpython {}  <input_file_name>  <output_file_name>\n\n\
-Run python {} -? to see this help.'.format(script_name, script_name)
+\tpython ' + script_name + '  <input_file_name>  <output_file_name> [-?]\n\n\
+Use -? to see this help.'
     print(help_str)
 
 def process_file(filepath):
